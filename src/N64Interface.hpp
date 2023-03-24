@@ -10,6 +10,8 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
+#define N64_RMT_RESOLUTION_HZ 10000000 // 1 MHz (1µs) resolution
+
 typedef bool (*ReceiveHandler)(const rmt_rx_done_event_data_t *edata, void *user_data);
 
 class N64Interface
@@ -19,6 +21,8 @@ private:
     rmt_channel_handle_t _tx_channel;
     rmt_encoder_handle_t _encoder;
     rmt_symbol_word_t *_rx_symbols;
+
+    rmt_receive_config_t _rmt_rx_config;
 
     ReceiveHandler _receiveHandler;
     void *_receiveHandlerUserData;
@@ -30,7 +34,7 @@ private:
     static bool n64_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data);
 
 public:
-    N64Interface(uint8_t pinData, size_t max_rx_bytes, ReceiveHandler recHandler, void *recUserData, bool _msbFirst = true);
+    N64Interface(uint8_t pinData, size_t max_rx_bytes, ReceiveHandler recHandler, void *recUserData, rmt_receive_config_t rx_config, bool _msbFirst = true);
     ~N64Interface();
 
     static size_t n64_rmt_decode_data(rmt_symbol_word_t *rmt_symbols, size_t symbol_num, uint8_t *decoded_bytes, size_t decoded_bytes_len);

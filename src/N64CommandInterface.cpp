@@ -5,6 +5,11 @@
 #include "string.h"
 #include "rmt_gc_n64_encoder.h"
 
+const static rmt_receive_config_t n64_rmt_rx_config = {
+    .signal_range_min_ns = 1000000000 / N64_RMT_RESOLUTION_HZ,
+    .signal_range_max_ns = 18 * 1000,
+};
+
 bool N64CommandInterface::receiveHandler(const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     N64CommandInterface *handle = (N64CommandInterface *)user_data;
@@ -17,7 +22,7 @@ bool N64CommandInterface::receiveHandler(const rmt_rx_done_event_data_t *edata, 
 
 N64CommandInterface::N64CommandInterface(uint8_t pinData, size_t max_rx_bytes, bool msbFirst)
 {
-    _interface = new N64Interface(pinData, max_rx_bytes, receiveHandler, this, msbFirst);
+    _interface = new N64Interface(pinData, max_rx_bytes, receiveHandler, this, n64_rmt_rx_config, msbFirst);
     _receiveQueue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
 }
 

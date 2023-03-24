@@ -5,18 +5,11 @@
 #include "string.h"
 #include "rmt_gc_n64_encoder.h"
 
-#define RMT_RESOLUTION_HZ 10000000 // 1 MHz (1µs) resolution
-
 const static rmt_transmit_config_t n64_rmt_tx_config = {
     .loop_count = 0, // no transfer loop
     .flags = { 
         .eot_level = 1 // bus should be released in IDLE
     },
-};
-
-const static rmt_receive_config_t n64_rmt_rx_config = {
-    .signal_range_min_ns = 1000000000 / RMT_RESOLUTION_HZ,
-    .signal_range_max_ns = 18 * 1000,
 };
 
 bool N64Interface::n64_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
@@ -55,13 +48,14 @@ size_t N64Interface::n64_rmt_decode_data(rmt_symbol_word_t *rmt_symbols, size_t 
     return byte_pos;
 }
 
-N64Interface::N64Interface(uint8_t pinData, size_t max_rx_bytes, ReceiveHandler recHandler, void *recUserData, bool msbFirst)
+N64Interface::N64Interface(uint8_t pinData, size_t max_rx_bytes, ReceiveHandler recHandler, void *recUserData, rmt_receive_config_t rx_config, bool msbFirst)
 {
     _data = static_cast<gpio_num_t>(pinData);
     _max_rx_bytes = max_rx_bytes;
     _msbFirst = msbFirst;
     _receiveHandler = recHandler;
     _receiveHandlerUserData = recUserData;
+    _rmt_rx_config = rx_config;
 }
 
 N64Interface::~N64Interface() 
@@ -82,7 +76,7 @@ N64Interface::~N64Interface()
 esp_err_t N64Interface::initialize()
 {
     gc_n64_encoder_config_t encoder_config = {
-        .resolution = RMT_RESOLUTION_HZ,
+        .resolution = N64_RMT_RESOLUTION_HZ,
         .msb_first = _msbFirst,
     };
     esp_err_t err = rmt_new_gc_n64_encoder(&encoder_config, &_encoder);
@@ -92,7 +86,7 @@ esp_err_t N64Interface::initialize()
     rmt_rx_channel_config_t rx_channel_config = {
         .gpio_num = _data,
         .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = RMT_RESOLUTION_HZ, 
+        .resolution_hz = N64_RMT_RESOLUTION_HZ, 
         .mem_block_symbols = _max_rx_bytes * 8, // Maximum bits to receive. (Read command returns 32 bytes + 1 stop bit.)
         .flags = {
             .invert_in = false,
@@ -108,7 +102,7 @@ esp_err_t N64Interface::initialize()
     rmt_tx_channel_config_t tx_channel_config = {
         .gpio_num = _data,
         .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = RMT_RESOLUTION_HZ,
+        .resolution_hz = N64_RMT_RESOLUTION_HZ,
         .mem_block_symbols = 64,
         .trans_queue_depth = 4,
         .flags = {
@@ -140,7 +134,7 @@ esp_err_t N64Interface::initialize()
 
 bool N64Interface::read(size_t bitsToReceive)
 {
-    esp_err_t err = rmt_receive(_rx_channel, _rx_symbols, bitsToReceive * sizeof(rmt_symbol_word_t), &n64_rmt_rx_config);
+    esp_err_t err = rmt_receive(_rx_channel, _rx_symbols, bitsToReceive * sizeof(rmt_symbol_word_t), &_rmt_rx_config);
     if (err != ESP_OK) {
         ESP_LOGE("N64InterfaceBase", "Receive failed: %d", err);
         return false;
