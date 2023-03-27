@@ -147,3 +147,14 @@ esp_err_t N64Interface::write(const uint8_t *send_buf, size_t len)
 {
     return rmt_transmit(_tx_channel, _encoder, send_buf, len, &n64_rmt_tx_config);
 }
+
+bool N64Interface::waitForTx()
+{
+    esp_err_t err = rmt_tx_wait_all_done(_tx_channel, 10);
+    if(err != ESP_OK)
+    {
+        // ESP_LOGE("N64Interface", "TX wait failed %s", esp_err_to_name(err));
+        return false;
+    }
+    return true;
+}

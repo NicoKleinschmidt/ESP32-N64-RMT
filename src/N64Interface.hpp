@@ -43,4 +43,5 @@ public:
 
     bool read(size_t bitsToRead);
     esp_err_t write(const uint8_t *send_buf, size_t len);
+    bool waitForTx();
 };
