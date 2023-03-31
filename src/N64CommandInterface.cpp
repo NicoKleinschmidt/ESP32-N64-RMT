@@ -50,19 +50,19 @@ size_t N64CommandInterface::send_command(uint8_t *command, size_t command_len, u
     }
     esp_err_t err = _interface->write(command, command_len);
     if (err != ESP_OK) {
-        ESP_LOGE("N64Interface", "Transmit failed: %d", err);
+        ESP_LOGD("N64Interface", "Transmit failed: %d", err);
         return 0;
     }
 
     rmt_rx_done_event_data_t rmt_rx_evt_data;
     if (xQueueReceive(_receiveQueue, &rmt_rx_evt_data, pdMS_TO_TICKS(100)) != pdPASS) {
-        ESP_LOGE("N64Interface", "Timeout");
+        ESP_LOGD("N64Interface", "Timeout");
         return 0;
     }
 
     if(rmt_rx_evt_data.num_symbols < command_len * 8 + 2)
     {
-        ESP_LOGE("N64Interface", "Only received %d symbols. Min: %d", rmt_rx_evt_data.num_symbols, command_len * 8 + 2);
+        ESP_LOGD("N64Interface", "Only received %d symbols. Min: %d", rmt_rx_evt_data.num_symbols, command_len * 8 + 2);
         return 0;
     }
 

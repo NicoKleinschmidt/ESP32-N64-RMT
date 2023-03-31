@@ -136,7 +136,7 @@ bool N64Interface::read(size_t bitsToReceive)
 {
     esp_err_t err = rmt_receive(_rx_channel, _rx_symbols, bitsToReceive * sizeof(rmt_symbol_word_t), &_rmt_rx_config);
     if (err != ESP_OK) {
-        ESP_LOGE("N64InterfaceBase", "Receive failed: %d", err);
+        ESP_LOGD("N64InterfaceBase", "Receive failed: %d", err);
         return false;
     }
 
@@ -153,7 +153,7 @@ bool N64Interface::waitForTx()
     esp_err_t err = rmt_tx_wait_all_done(_tx_channel, 10);
     if(err != ESP_OK)
     {
-        // ESP_LOGE("N64Interface", "TX wait failed %s", esp_err_to_name(err));
+        ESP_LOGD("N64Interface", "TX wait failed %s", esp_err_to_name(err));
         return false;
     }
     return true;
